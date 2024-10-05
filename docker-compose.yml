@@ -1,0 +1,50 @@
+networks:
+  project:
+
+x-network-template:
+  &x-network-template
+  networks:
+    - project
+
+x-user-template:
+  &x-user-template
+  <<: *x-network-template
+  user: ${USER_ID:-1000}:${GROUP_ID:-1000}
+
+
+x-php-template:
+  &x-php-template
+  <<: *x-user-template
+  build:
+    context: .
+    dockerfile: ./docker/php-fpm.Dockerfile
+    args:
+      - USER_ID=${USER_ID:-1000}
+      - GROUP_ID=${GROUP_ID:-1000}
+      - USER=${USER}
+      - WORKDIR=${WORKDIR:-/var/www/html}
+
+services:
+  php-fpm:
+    <<: *x-php-template
+    restart: always
+    volumes:
+      - ./${LARAVEL_PROJECT_DIR}:/var/www/html
+
+  nginx:
+    <<: *x-network-template
+    image: nginx:latest
+    restart: always
+    environment:
+      - PHP_FPM_URL=php-fpm:9000
+      - SERVER_ROOT=/var/www/html/public
+      - TZ=Europe/Moscow
+    ports:
+      - ${NGINX_PORT:-80}:80
+    volumes:
+      - ./${LARAVEL_PROJECT_DIR}:/var/www/html
+      # nginx after container start rewrites config file from template (need to read ENV variables in config file)
+      - ./docker/nginx.conf:/etc/nginx/templates/default.conf.template:ro
+
+
+
