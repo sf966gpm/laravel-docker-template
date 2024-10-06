@@ -1,27 +1,34 @@
 #!/bin/bash
 
-# check if .env file exists
-if ! [ -f .env ]; then
-  cp .env.example .env
-fi
+check_env_file() {
+  if ! [ -f .env ]; then
+    cp .env.example .env
+  fi
+}
 
-source .env
+check_laravel_project_dir() {
+  if ! [ -n "$LARAVEL_PROJECT_DIR" ]; then
+    echo "Variable LARAVEL_PROJECT_DIR is not set. Exiting..."
+    exit 1
+  fi
+}
 
-# check if variable is set
-if ! [ -n "$LARAVEL_PROJECT_DIR" ]; then
-  echo "Variable LARAVEL_PROJECT_DIR is not set. Exiting..."
-  exit 1
-fi
+create_laravel_project_dir() {
+  if [ ! -d "$LARAVEL_PROJECT_DIR" ]; then
+    echo "Creating directory $LARAVEL_PROJECT_DIR"
+    mkdir "$LARAVEL_PROJECT_DIR"
+  fi
+}
 
-# check if directory not exists and create it
-if [ ! -d "$LARAVEL_PROJECT_DIR" ]; then
-  echo "Creating directory $LARAVEL_PROJECT_DIR"
-  mkdir "$LARAVEL_PROJECT_DIR"
-fi
+check_dir_owner() {
+  OWNER=$(stat -c "%U" "$1")
+  if ! [ "$OWNER" = "$USER" ]; then
+    echo "$USER does not own $LARAVEL_PROJECT_DIR. Please change owner of $LARAVEL_PROJECT_DIR to $USER. Exiting..."
+    exit 1
+  fi
+}
 
-# check if directory is empty
-if [ -z "$(ls -A "$PWD"/"$LARAVEL_PROJECT_DIR")" ]; then
-
+run_docker_compose() {
   if docker compose ps -q; then
     echo "Docker container is already running"
     echo "Turning off container"
@@ -31,9 +38,24 @@ if [ -z "$(ls -A "$PWD"/"$LARAVEL_PROJECT_DIR")" ]; then
   echo "Directory $LARAVEL_PROJECT_DIR is empty executing docker compose build and docker compose up -d"
   docker-compose build || { echo "Error building docker compose"; exit 1; }
   docker-compose up -d || { echo "Error starting docker compose"; exit 1; }
-  echo "Creating Laravel project in $LARAVEL_PROJECT_DIR"
-  docker-compose exec php-fpm composer create-project --prefer-dist laravel/laravel . || { echo "Error creating Laravel project"; exit 1; }
-  echo "Script finished"
+}
+
+composer_create_laravel_project() {
+    echo "Creating Laravel project in $LARAVEL_PROJECT_DIR"
+    docker-compose exec php-fpm composer create-project --prefer-dist laravel/laravel . || { echo "Error creating Laravel project"; exit 1; }
+}
+
+check_env_file
+source .env
+check_laravel_project_dir
+create_laravel_project_dir
+
+FOLDER_PATH="$PWD"/"$LARAVEL_PROJECT_DIR"
+if [ -z "$(ls -A "$FOLDER_PATH")" ]; then
+  check_dir_owner "$FOLDER_PATH"
+  run_docker_compose
+  composer_create_laravel_project
+  echo echo "Script finished"
   exit 0
 else
   echo "Directory $LARAVEL_PROJECT_DIR is not empty. Exiting script..."
