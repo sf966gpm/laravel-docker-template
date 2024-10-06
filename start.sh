@@ -14,6 +14,7 @@ check_laravel_project_dir() {
 }
 
 create_laravel_project_dir() {
+  check_laravel_project_dir
   if [ ! -d "$LARAVEL_PROJECT_DIR" ]; then
     echo "Creating directory $LARAVEL_PROJECT_DIR"
     mkdir "$LARAVEL_PROJECT_DIR"
@@ -47,7 +48,6 @@ composer_create_laravel_project() {
 
 create_env_file
 source .env
-check_laravel_project_dir
 create_laravel_project_dir
 
 FOLDER_PATH="$PWD"/"$LARAVEL_PROJECT_DIR"
