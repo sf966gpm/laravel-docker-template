@@ -51,13 +51,13 @@ check_laravel_project_dir
 create_laravel_project_dir
 
 FOLDER_PATH="$PWD"/"$LARAVEL_PROJECT_DIR"
-if [ -z "$(ls -A "$FOLDER_PATH")" ]; then
+if ! [ -z "$(ls -A "$FOLDER_PATH")" ]; then
+  echo "Directory $LARAVEL_PROJECT_DIR is not empty. Exiting script..."
+  exit 1
+else
   check_dir_owner "$FOLDER_PATH"
   run_docker_compose
   composer_create_laravel_project
   echo echo "Script finished"
   exit 0
-else
-  echo "Directory $LARAVEL_PROJECT_DIR is not empty. Exiting script..."
-  exit 1
 fi
