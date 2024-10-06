@@ -1,8 +1,8 @@
 #!/bin/bash
 
-check_env_file() {
+create_env_file() {
   if ! [ -f .env ]; then
-    cp .env.example .env
+    cp .env.example .env || { echo "Error copying .env.example to .env"; exit 1; }
   fi
 }
 
@@ -45,7 +45,7 @@ composer_create_laravel_project() {
     docker-compose exec php-fpm composer create-project --prefer-dist laravel/laravel . || { echo "Error creating Laravel project"; exit 1; }
 }
 
-check_env_file
+create_env_file
 source .env
 check_laravel_project_dir
 create_laravel_project_dir
