@@ -37,13 +37,13 @@ run_docker_compose() {
   fi
 
   echo "Directory $LARAVEL_PROJECT_DIR is empty executing docker compose build and docker compose up -d"
-  docker-compose build || { echo "Error building docker compose"; exit 1; }
-  docker-compose up -d || { echo "Error starting docker compose"; exit 1; }
+  docker compose build || { echo "Error building docker compose"; exit 1; }
+  docker compose up -d || { echo "Error starting docker compose"; exit 1; }
 }
 
 composer_create_laravel_project() {
     echo "Creating Laravel project in $LARAVEL_PROJECT_DIR"
-    docker-compose exec php-fpm composer create-project --prefer-dist laravel/laravel . || { echo "Error creating Laravel project"; exit 1; }
+    docker compose exec php-fpm composer create-project --prefer-dist laravel/laravel . || { echo "Error creating Laravel project"; exit 1; }
 }
 
 create_env_file
